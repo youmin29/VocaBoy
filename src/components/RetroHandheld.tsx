@@ -55,9 +55,9 @@ export function RetroHandheld() {
 
   return (
     <div className="relative flex flex-col items-center">
-      {/* ── Device body ── */}
-      <div className="relative w-[420px] bg-gradient-to-b from-[#d0d0dc] via-[#c4c4d0] to-[#b8b8c8] rounded-[44px] shadow-[0_20px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] border border-[#a0a0b4] select-none"
-        style={{ paddingBottom: '32px' }}>
+      {/* ── Device body — 기기 플라스틱 전체 drag ── */}
+      <div className="relative w-[420px] bg-gradient-to-b from-[#d0d0dc] via-[#c4c4d0] to-[#b8b8c8] rounded-[44px] shadow-[0_20px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] border border-[#a0a0b4] select-none cursor-grab active:cursor-grabbing"
+        style={{ paddingBottom: '32px', WebkitAppRegion: 'drag' } as React.CSSProperties}>
 
         {/* glossy highlight */}
         <div className="absolute top-0 left-0 right-0 h-40 rounded-t-[44px] bg-gradient-to-b from-white/25 to-transparent pointer-events-none" />
@@ -66,18 +66,15 @@ export function RetroHandheld() {
 
         <div className="relative flex flex-col items-center px-8 pt-8">
 
-          {/* ── Top brand bar — 드래그 핸들 ── */}
-          <div
-            className="flex justify-between items-center w-full mb-4 cursor-grab active:cursor-grabbing"
-            style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-          >
-            <div className="flex items-center gap-1.5" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          {/* ── Top brand bar ── */}
+          <div className="flex justify-between items-center w-full mb-4">
+            <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)]" />
               <span className="text-[10px] font-mono tracking-[0.2em] text-[#5a5a7a] font-bold">VOCABOY</span>
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
             </div>
             {/* battery */}
-            <div className="flex items-center gap-1 opacity-70" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+            <div className="flex items-center gap-1 opacity-70">
               <span className="text-[8px] font-mono text-[#6a6a8a] tracking-wider">BATT</span>
               <div className="w-6 h-3 border border-[#6a6a8a] rounded-[2px] flex items-center px-0.5 gap-0.5">
                 <div className="flex-1 h-1.5 bg-emerald-600 rounded-[1px]" />
@@ -87,7 +84,7 @@ export function RetroHandheld() {
           </div>
 
           {/* ── LCD Screen ── */}
-          <div className="mb-8">
+          <div className="mb-8" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <LCDScreen>
               {screen === 'boot' && <BootScreen onComplete={handleBootComplete} />}
               {screen === 'menu' && <MenuScreen onNavigate={navigateTo} />}
@@ -107,7 +104,7 @@ export function RetroHandheld() {
           </div>
 
           {/* ── Controls ── */}
-          <div className="flex items-center justify-between w-full px-2 mb-4">
+          <div className="flex items-center justify-between w-full px-2 mb-4" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <DPad onPress={handleDPad} pressed={pressedDir} />
 
             {/* center info */}
@@ -128,7 +125,7 @@ export function RetroHandheld() {
           </div>
 
           {/* ── Menu / Start buttons ── */}
-          <div className="flex gap-6 items-center mb-2">
+          <div className="flex gap-6 items-center mb-2" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             {[{ label: 'SELECT', key: 'Tab' }, { label: 'START', key: 'Enter' }].map(({ label, key }) => (
               <button
                 key={label}
