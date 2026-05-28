@@ -16,25 +16,25 @@ export async function ensureSeeded() {
   }
 }
 
-// ── 브라우저 모드용 로컬스토리지 커스텀 단어 ─────────────────────────────────
-const STORAGE_KEY = 'vocaboy_custom'
+// ── 브라우저 / Capacitor 모드용 localStorage 영속성 ──────────────────────────
+// 단어 + 진도 전체를 하나의 키로 저장해 앱 재시작 후에도 유지
+const STORAGE_KEY = 'vocaboy_words'
 
-function loadCustomFromStorage(): VocabRow[] {
+function loadWordsFromStorage(): VocabRow[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
 }
 
-function saveCustomToStorage(words: VocabRow[]) {
+function saveWordsToStorage(words: VocabRow[]) {
   try {
-    const custom = words.filter(w => w.is_custom === 1)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(custom))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(words))
   } catch {}
 }
 
-// In browser mode (no electron), use in-memory fallback with localStorage persistence
-const n4Words: VocabRow[] = JLPT_N4_VOCAB.map((v, i) => ({
+// 저장된 데이터가 있으면 불러오고, 없으면 N4 기본값으로 초기화
+const memVocab: VocabRow[] = loadWordsFromStorage() ?? JLPT_N4_VOCAB.map((v, i) => ({
   id: i + 1,
   word: v.word,
   reading: v.reading,
@@ -49,12 +49,18 @@ const n4Words: VocabRow[] = JLPT_N4_VOCAB.map((v, i) => ({
   mastered: 0,
 }))
 
-const memVocab: VocabRow[] = [
-  ...n4Words,
-  ...loadCustomFromStorage(),
-]
-
+// memProgress를 저장된 memVocab에서 초기화 (진도 누락 방지)
 const memProgress: Record<number, { correct: number; wrong: number; streak: number; mastered: number }> = {}
+memVocab.forEach(v => {
+  if (v.correct || v.wrong || v.streak || v.mastered) {
+    memProgress[v.id] = {
+      correct: v.correct ?? 0,
+      wrong: v.wrong ?? 0,
+      streak: v.streak ?? 0,
+      mastered: v.mastered ?? 0,
+    }
+  }
+})
 
 export const db = {
   async getAll(): Promise<VocabRow[]> {
@@ -82,6 +88,7 @@ export const db = {
     memProgress[vocabId] = p
     const v = memVocab.find(x => x.id === vocabId)
     if (v) Object.assign(v, p)
+    saveWordsToStorage(memVocab)
   },
   async getStats(): Promise<StatsData> {
     if (window.vocaAPI) return window.vocaAPI.progress.getStats()
@@ -98,15 +105,15 @@ export const db = {
     if (window.vocaAPI) return window.vocaAPI.progress.reset()
     memVocab.forEach(v => { v.correct = 0; v.wrong = 0; v.streak = 0; v.mastered = 0 })
     Object.keys(memProgress).forEach(k => delete memProgress[Number(k)])
+    saveWordsToStorage(memVocab)
   },
   async addWord(word: string, reading: string, meaning: string, example: string, category = 'custom'): Promise<void> {
     if (window.vocaAPI) {
       await window.vocaAPI.vocab.addCustom(word, reading, meaning, example, category)
       return
     }
-    // 브라우저 모드: 메모리 + 로컬스토리지에 저장
     const id = memVocab.length + 1
     memVocab.push({ id, word, reading, meaning, example, level: 'N4', category, is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0 })
-    saveCustomToStorage(memVocab)
+    saveWordsToStorage(memVocab)
   },
 }

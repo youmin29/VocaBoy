@@ -5,7 +5,7 @@
 **레트로 게임기 감성의 JLPT N4 일본어 단어장 앱**
 
 [![Release](https://img.shields.io/github/v/release/youmin29/VocaBoy?style=flat-square)](https://github.com/youmin29/VocaBoy/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-blue?style=flat-square)](https://github.com/youmin29/VocaBoy/releases)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android-blue?style=flat-square)](https://github.com/youmin29/VocaBoy/releases)
 [![Electron](https://img.shields.io/badge/Electron-30-47848f?style=flat-square&logo=electron)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square&logo=react)](https://react.dev/)
 
@@ -13,7 +13,7 @@
 
 ---
 
-Game Boy 스타일의 레트로 UI로 JLPT N4 일본어 단어를 재미있게 외울 수 있는 데스크탑 앱입니다. 흑백 LCD 화면, 도트 폰트, 물리 버튼 UI가 특징입니다.
+Game Boy 스타일의 레트로 UI로 JLPT N4 일본어 단어를 재미있게 외울 수 있는 앱입니다. 흑백 LCD 화면, 도트 폰트, 물리 버튼 UI가 특징이며, 데스크탑(Electron)과 Android 모두 지원합니다.
 
 ## 기능
 
@@ -37,8 +37,11 @@ Game Boy 스타일의 레트로 UI로 JLPT N4 일본어 단어를 재미있게 �
 | macOS | `VocaBoy-Mac-x.x.x-Installer.dmg` |
 | Windows | `VocaBoy-Windows-x.x.x-Setup.exe` |
 | Linux | `VocaBoy-Linux-x.x.x.AppImage` |
+| Android | `app-debug.apk` |
 
 > **macOS 사용자**: 첫 실행 시 "개발자를 확인할 수 없음" 경고가 뜰 수 있습니다. `시스템 설정 → 개인 정보 보호 및 보안 → 확인 없이 열기`에서 허용해 주세요.
+
+> **Android 사용자**: APK 설치 전 `설정 → 보안 → 출처를 알 수 없는 앱 설치 허용`을 켜주세요.
 
 ## 개발 환경 설정
 
@@ -61,10 +64,16 @@ npm run dev
 
 ```bash
 cd vocaboy
+
+# 데스크탑 (Electron)
 npm run build
+
+# Android APK
+npm run build:android        # 웹 빌드 + Capacitor 동기화
+cd android && ./gradlew assembleDebug
 ```
 
-빌드 결과물은 `release/{버전}/` 디렉토리에 생성됩니다.
+데스크탑 빌드 결과물은 `release/{버전}/` 디렉토리에, Android APK는 `android/app/build/outputs/apk/debug/`에 생성됩니다.
 
 ## 기술 스택
 
@@ -74,8 +83,9 @@ npm run build
 | 스타일 | Tailwind CSS |
 | 상태 관리 | Zustand |
 | 데스크탑 | Electron 30 |
-| DB | better-sqlite3 (SQLite) |
-| 빌드 | Vite + electron-builder |
+| 모바일 | Capacitor 7 (Android) |
+| DB | better-sqlite3 (SQLite) / localStorage |
+| 빌드 | Vite + electron-builder / Gradle |
 
 ## 라이선스
 

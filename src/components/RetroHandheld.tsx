@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useVocabStore, Screen, QuizMode } from '../store/vocabStore'
 import { db, ensureSeeded } from '../utils/db'
 import { sounds } from '../utils/audio'
@@ -20,6 +20,16 @@ export function RetroHandheld() {
   const [pressedA, setPressedA] = useState(false)
   const [pressedB, setPressedB] = useState(false)
   const [pressedDir, setPressedDir] = useState<Direction | null>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const updateScale = () => {
+      setScale(Math.min(1, (window.innerWidth - 16) / 440))
+    }
+    updateScale()
+    window.addEventListener('resize', updateScale)
+    return () => window.removeEventListener('resize', updateScale)
+  }, [])
 
   // load all words on boot complete
   const handleBootComplete = async () => {
@@ -55,7 +65,7 @@ export function RetroHandheld() {
   const acc = sessionTotal > 0 ? Math.round((sessionScore / sessionTotal) * 100) : 0
 
   return (
-    <div className="relative flex flex-col items-center">
+    <div className="relative flex flex-col items-center" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
       {/* ── Device body — 기기 플라스틱 전체 drag ── */}
       <div className="relative w-[420px] bg-gradient-to-b from-[#d0d0dc] via-[#c4c4d0] to-[#b8b8c8] rounded-[44px] shadow-[0_20px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.4)] border border-[#a0a0b4] select-none cursor-grab active:cursor-grabbing"
         style={{ paddingBottom: '32px', WebkitAppRegion: 'drag' } as React.CSSProperties}>

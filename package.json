@@ -2,7 +2,7 @@
   "name": "vocaboy",
   "productName": "VocaBoy",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,9 +10,13 @@
     "build:ci": "tsc && vite build && electron-builder --publish never",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:android": "BUILD_TARGET=android tsc && BUILD_TARGET=android vite build && cap sync android",
+    "open:android": "cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.5",
+    "@capacitor/core": "^7.6.5",
     "better-sqlite3": "^9.4.3",
     "lucide-react": "^0.468.0",
     "react": "^18.2.0",
@@ -21,6 +25,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.5",
     "@electron/rebuild": "^3.6.0",
     "@types/better-sqlite3": "^7.6.8",
     "@types/react": "^18.2.64",
