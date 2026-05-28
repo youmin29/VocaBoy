@@ -6,7 +6,7 @@ interface Props {
 
 export function LCDScreen({ children }: Props) {
   return (
-    <div className="relative w-[320px] h-[240px]">
+    <div className="relative w-[320px] h-[290px]">
       {/* outer bezel */}
       <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#1a1a2a] to-[#0d0d18] border-4 border-[#0a0a14] shadow-[inset_0_2px_4px_rgba(255,255,255,0.05)]">
         {/* inner bezel */}
