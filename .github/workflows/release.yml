@@ -9,8 +9,24 @@ permissions:
   contents: write
 
 jobs:
-  # ── 각 플랫폼에서 빌드 ──────────────────────────────────────────────────────
+  # ── 릴리즈 생성 + 노트 추가 (먼저 실행) ────────────────────────────────────
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: VocaBoy v${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+
+  # ── 각 플랫폼에서 빌드 후 릴리즈에 직접 업로드 ──────────────────────────────
   build:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -44,51 +60,17 @@ jobs:
       - name: Build
         run: npm run build:ci
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false   # macOS 코드사이닝 비활성화
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Show build output
+        shell: bash
+        run: find release -type f 2>/dev/null || echo "release dir not found"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: dist-${{ matrix.artifact }}
-          path: |
+          files: |
             release/**/*.dmg
             release/**/*.exe
             release/**/*.AppImage
-          if-no-files-found: warn
-
-  # ── CHANGELOG에서 릴리즈 노트 추출 후 GitHub Release 생성 ──────────────────
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Extract release notes from RELEASE_NOTES.md
-        id: changelog
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          NOTES=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" RELEASE_NOTES.md | sed '/^$/d' | sed '1{/^$/d}')
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: VocaBoy v${{ steps.version.outputs.version }}
-          body: ${{ steps.changelog.outputs.notes }}
-          files: artifacts/**/*
-          draft: false
-          prerelease: false
+          fail_on_unmatched_files: false
