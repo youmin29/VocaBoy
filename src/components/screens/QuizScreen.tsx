@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useVocabStore } from '../../store/vocabStore'
+import { useVocabStore, QuizMode } from '../../store/vocabStore'
 import { db } from '../../utils/db'
 import { sounds } from '../../utils/audio'
 
@@ -7,18 +7,44 @@ type Phase = 'question' | 'result' | 'summary'
 
 interface QuizItem {
   vocab: VocabRow
-  options: [string, string]   // [incorrect, correct] shuffled
+  questionLabel: string   // 화면 상단 안내 ("TRANSLATE" / "READING" / "WRITING")
+  questionText: string    // 문제로 보여줄 텍스트
+  questionSub: string     // 문제 서브텍스트 (읽기, 뜻 등 힌트)
+  options: [string, string]
   correctIndex: 0 | 1
+  type: QuizMode
 }
 
-function buildQuiz(vocab: VocabRow, pool: VocabRow[]): QuizItem {
+function buildItem(vocab: VocabRow, pool: VocabRow[], type: QuizMode): QuizItem {
+  const resolvedType = type === 'random'
+    ? (['meaning', 'reading', 'writing'] as const)[Math.floor(Math.random() * 3)]
+    : type
+
   const wrong = pool.filter(v => v.id !== vocab.id)
-  const wrongPick = wrong[Math.floor(Math.random() * wrong.length)]
-  const correctIndex = Math.random() < 0.5 ? 0 : 1
-  const options: [string, string] = correctIndex === 0
-    ? [vocab.meaning, wrongPick.meaning]
-    : [wrongPick.meaning, vocab.meaning]
-  return { vocab, options, correctIndex }
+  const pick = wrong[Math.floor(Math.random() * wrong.length)]
+  const ci: 0 | 1 = Math.random() < 0.5 ? 0 : 1
+
+  if (resolvedType === 'reading') {
+    // 한자 → 히라가나
+    const opts: [string, string] = ci === 0
+      ? [vocab.reading, pick.reading]
+      : [pick.reading, vocab.reading]
+    return { vocab, questionLabel: 'READING', questionText: vocab.word, questionSub: vocab.meaning, options: opts, correctIndex: ci, type: resolvedType }
+  }
+
+  if (resolvedType === 'writing') {
+    // 히라가나 → 한자
+    const opts: [string, string] = ci === 0
+      ? [vocab.word, pick.word]
+      : [pick.word, vocab.word]
+    return { vocab, questionLabel: 'WRITING', questionText: vocab.reading, questionSub: vocab.meaning, options: opts, correctIndex: ci, type: resolvedType }
+  }
+
+  // meaning: 한자 → 뜻
+  const opts: [string, string] = ci === 0
+    ? [vocab.meaning, pick.meaning]
+    : [pick.meaning, vocab.meaning]
+  return { vocab, questionLabel: 'MEANING', questionText: vocab.word, questionSub: vocab.reading, options: opts, correctIndex: ci, type: resolvedType }
 }
 
 interface Props {
@@ -28,7 +54,7 @@ interface Props {
 const QUIZ_LENGTH = 10
 
 export function QuizScreen({ onBack }: Props) {
-  const { allWords, recordCorrect, recordWrong, sessionScore, sessionTotal, currentStreak, bestStreak, resetSession } = useVocabStore()
+  const { allWords, quizMode, recordCorrect, recordWrong, sessionScore, sessionTotal, currentStreak, bestStreak, resetSession } = useVocabStore()
   const [items, setItems] = useState<QuizItem[]>([])
   const [cursor, setCursor] = useState(0)
   const [selected, setSelected] = useState<0 | 1 | null>(null)
@@ -39,11 +65,9 @@ export function QuizScreen({ onBack }: Props) {
     if (allWords.length < 4) return
     resetSession()
     const shuffled = [...allWords].sort(() => Math.random() - 0.5).slice(0, QUIZ_LENGTH)
-    setItems(shuffled.map(v => buildQuiz(v, allWords)))
-    setCursor(0)
-    setSelected(null)
-    setPhase('question')
-  }, [allWords])
+    setItems(shuffled.map(v => buildItem(v, allWords, quizMode)))
+    setCursor(0); setSelected(null); setPhase('question')
+  }, [allWords, quizMode])
 
   const current = items[cursor]
 
@@ -52,34 +76,30 @@ export function QuizScreen({ onBack }: Props) {
     const correct = selected === current.correctIndex
     setPhase('result')
     if (correct) {
-      sounds.correct()
-      recordCorrect()
+      sounds.correct(); recordCorrect()
       await db.recordProgress(current.vocab.id, true)
     } else {
-      sounds.wrong()
-      recordWrong()
-      setShake(true)
-      setTimeout(() => setShake(false), 350)
+      sounds.wrong(); recordWrong()
+      setShake(true); setTimeout(() => setShake(false), 350)
       await db.recordProgress(current.vocab.id, false)
     }
   }, [current, selected, phase, recordCorrect, recordWrong])
 
   const next = useCallback(async () => {
     if (cursor + 1 >= items.length) {
-      await db.saveSession('quiz', sessionScore + (selected === current?.correctIndex ? 1 : 0), sessionTotal + 1, bestStreak)
+      const isLastCorrect = selected === current?.correctIndex
+      await db.saveSession(quizMode, sessionScore + (isLastCorrect ? 1 : 0), sessionTotal + 1, bestStreak)
       setPhase('summary')
     } else {
-      setCursor(p => p + 1)
-      setSelected(null)
-      setPhase('question')
+      setCursor(p => p + 1); setSelected(null); setPhase('question')
     }
-  }, [cursor, items.length, sessionScore, sessionTotal, bestStreak, selected, current])
+  }, [cursor, items.length, sessionScore, sessionTotal, bestStreak, selected, current, quizMode])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (phase === 'summary') { if (e.key === 'Escape' || e.key === 'x') onBack(); return }
-      if (phase === 'result') { if (e.key === 'Enter' || e.key === 'z') next(); return }
-      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { sounds.click(); setSelected(0) }
+      if (phase === 'result')  { if (e.key === 'Enter' || e.key === 'z') next(); return }
+      if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { sounds.click(); setSelected(0) }
       else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { sounds.click(); setSelected(1) }
       else if (e.key === 'Enter' || e.key === 'z') confirm()
       else if (e.key === 'Escape' || e.key === 'x') onBack()
@@ -88,44 +108,44 @@ export function QuizScreen({ onBack }: Props) {
     return () => window.removeEventListener('keydown', handler)
   }, [phase, confirm, next, onBack])
 
-  if (items.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center font-dot text-lcd-dark text-lg">
-        LOADING...
-      </div>
-    )
-  }
+  if (items.length === 0) return (
+    <div className="h-full flex items-center justify-center font-dot text-lcd-dark text-lg">LOADING...</div>
+  )
 
+  // ── Summary ───────────────────────────────────────────────────────────────
   if (phase === 'summary') {
-    const total = sessionTotal
-    const score = sessionScore
-    const acc = total > 0 ? Math.round((score / total) * 100) : 0
+    const acc = sessionTotal > 0 ? Math.round((sessionScore / sessionTotal) * 100) : 0
+    const modeLabel: Record<QuizMode, string> = { meaning: '의미', reading: '읽기', writing: '표기', random: '랜덤' }
     return (
       <div className="h-full flex flex-col font-dot text-lcd-dark select-none">
         <div className="text-center border-b-2 border-lcd-dark/30 pb-2 mb-3">
           <div className="text-xl tracking-widest">◆ RESULT ◆</div>
+          <div className="text-[9px] opacity-60 mt-0.5">[{modeLabel[quizMode]} 퀴즈]</div>
         </div>
-        <div className="flex-1 space-y-2 px-1">
+        <div className="flex-1 space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <StatBox label="SCORE" value={`${score}/${total}`} />
+            <StatBox label="SCORE"    value={`${sessionScore}/${sessionTotal}`} />
             <StatBox label="ACCURACY" value={`${acc}%`} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <StatBox label="STREAK" value={String(currentStreak)} />
-            <StatBox label="BEST" value={String(bestStreak)} />
+            <StatBox label="BEST"   value={String(bestStreak)} />
           </div>
           <div className="text-center text-sm mt-3 opacity-70">
             {acc >= 80 ? '(^_^) GREAT JOB!' : acc >= 60 ? '(･_･) KEEP GOING!' : '(>_<) STUDY MORE!'}
           </div>
         </div>
-        <div className="text-[9px] text-center opacity-50 pt-2 border-t border-lcd-dark/20">
-          B BACK TO MENU
-        </div>
+        <div className="text-[9px] text-center opacity-50 pt-2 border-t border-lcd-dark/20">B BACK TO MENU</div>
       </div>
     )
   }
 
   const isCorrect = phase === 'result' && selected === current.correctIndex
+
+  // ── Type badge color ──────────────────────────────────────────────────────
+  const typeBadge: Record<string, string> = {
+    meaning: 'KOR', reading: 'よみ', writing: '漢字',
+  }
 
   return (
     <div className={`h-full flex flex-col font-dot text-lcd-dark select-none ${shake ? 'animate-shake' : ''}`}>
@@ -136,45 +156,42 @@ export function QuizScreen({ onBack }: Props) {
           {currentStreak > 1 && <span>🔥{currentStreak}</span>}
           <span>SCORE: {sessionScore}</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <span className="border border-lcd-dark/40 px-1 text-[8px] opacity-60">{typeBadge[current.type] ?? '?'}</span>
           <span className="w-1.5 h-1.5 bg-lcd-dark rounded-full animate-blink" />
           <span>{cursor + 1}/{items.length}</span>
         </div>
       </div>
 
-      {/* word */}
+      {/* question */}
       <div className="mb-2">
-        <div className="text-[9px] opacity-60 tracking-wider mb-0.5">TRANSLATE:</div>
-        <div className="text-3xl font-bold tracking-tight leading-none mb-0.5">{current.vocab.word}</div>
-        <div className="text-xs opacity-60">{current.vocab.reading}</div>
+        <div className="text-[9px] opacity-60 tracking-wider mb-0.5">{current.questionLabel}:</div>
+        <div className="text-3xl font-bold tracking-tight leading-none mb-0.5">{current.questionText}</div>
+        <div className="text-xs opacity-50">{current.questionSub}</div>
       </div>
 
-      {/* 2-choice options */}
+      {/* options */}
       <div className="space-y-1.5 flex-1">
         {current.options.map((opt, i) => {
-          const isSelected = selected === i
-          const showCorrect = phase === 'result' && i === current.correctIndex
-          const showWrong = phase === 'result' && isSelected && !isCorrect
+          const isSel      = selected === i
+          const showRight  = phase === 'result' && i === current.correctIndex
+          const showWrong  = phase === 'result' && isSel && !isCorrect
 
           return (
             <button
               key={i}
               onClick={() => { if (phase === 'question') { sounds.click(); setSelected(i as 0 | 1) } }}
               className={`
-                w-full text-left px-2 py-2 text-sm tracking-wide
-                border-2 transition-all duration-75
-                ${isSelected && phase === 'question'
-                  ? 'bg-lcd-dark text-lcd-bg border-lcd-dark'
-                  : showCorrect
-                    ? 'bg-lcd-dark text-lcd-bg border-lcd-dark'
-                    : showWrong
-                      ? 'bg-lcd-dark/20 border-lcd-dark/40 line-through opacity-50'
-                      : 'bg-lcd-dark/5 border-lcd-dark/20 hover:bg-lcd-dark/15'}
+                w-full text-left px-2 py-2 text-sm tracking-wide border-2 transition-all duration-75
+                ${isSel && phase === 'question' ? 'bg-lcd-dark text-lcd-bg border-lcd-dark'
+                  : showRight ? 'bg-lcd-dark text-lcd-bg border-lcd-dark'
+                  : showWrong ? 'bg-lcd-dark/20 border-lcd-dark/40 line-through opacity-50'
+                  : 'bg-lcd-dark/5 border-lcd-dark/20 hover:bg-lcd-dark/15'}
               `}
             >
               <span className="opacity-60 mr-2">{i === 0 ? 'A.' : 'B.'}</span>
               {opt}
-              {showCorrect && <span className="ml-2">✓</span>}
+              {showRight && <span className="ml-2">✓</span>}
               {showWrong && <span className="ml-2">✗</span>}
             </button>
           )

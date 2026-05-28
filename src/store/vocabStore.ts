@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 
-export type Screen = 'boot' | 'menu' | 'quiz' | 'flashcard' | 'wordlist' | 'stats' | 'addword'
+export type Screen = 'boot' | 'menu' | 'quizmode' | 'quiz' | 'flashcard' | 'wordlist' | 'stats' | 'addword'
+export type QuizMode = 'meaning' | 'reading' | 'writing' | 'random'
 
 interface VocabState {
   screen: Screen
+  quizMode: QuizMode
   currentStreak: number
   bestStreak: number
   sessionScore: number
@@ -12,6 +14,7 @@ interface VocabState {
   isLoading: boolean
 
   setScreen: (s: Screen) => void
+  setQuizMode: (m: QuizMode) => void
   setAllWords: (words: VocabRow[]) => void
   incrementStreak: () => void
   resetStreak: () => void
@@ -23,6 +26,7 @@ interface VocabState {
 
 export const useVocabStore = create<VocabState>((set, get) => ({
   screen: 'boot',
+  quizMode: 'meaning',
   currentStreak: 0,
   bestStreak: 0,
   sessionScore: 0,
@@ -31,6 +35,7 @@ export const useVocabStore = create<VocabState>((set, get) => ({
   isLoading: false,
 
   setScreen: (screen) => set({ screen }),
+  setQuizMode: (quizMode) => set({ quizMode }),
   setAllWords: (allWords) => set({ allWords }),
   setLoading: (isLoading) => set({ isLoading }),
 

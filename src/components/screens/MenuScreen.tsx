@@ -3,7 +3,7 @@ import { Screen } from '../../store/vocabStore'
 import { sounds } from '../../utils/audio'
 
 const MENU_ITEMS: { label: string; icon: string; target: Screen }[] = [
-  { label: 'QUIZ MODE', icon: '?', target: 'quiz' },
+  { label: 'QUIZ MODE', icon: '?', target: 'quizmode' },
   { label: 'FLASHCARD', icon: '◈', target: 'flashcard' },
   { label: 'WORD LIST', icon: '≡', target: 'wordlist' },
   { label: 'MY STATS', icon: '★', target: 'stats' },

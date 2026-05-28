@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useVocabStore, Screen } from '../store/vocabStore'
+import { useVocabStore, Screen, QuizMode } from '../store/vocabStore'
 import { db } from '../utils/db'
 import { sounds } from '../utils/audio'
 
@@ -8,6 +8,7 @@ import { DPad, Direction } from './DPad'
 import { ActionButtons } from './ActionButtons'
 import { BootScreen } from './BootScreen'
 import { MenuScreen } from './screens/MenuScreen'
+import { QuizModeScreen } from './screens/QuizModeScreen'
 import { QuizScreen } from './screens/QuizScreen'
 import { FlashcardScreen } from './screens/FlashcardScreen'
 import { WordListScreen } from './screens/WordListScreen'
@@ -15,7 +16,7 @@ import { StatsScreen } from './screens/StatsScreen'
 import { AddWordScreen } from './screens/AddWordScreen'
 
 export function RetroHandheld() {
-  const { screen, setScreen, setAllWords, currentStreak, sessionScore, sessionTotal } = useVocabStore()
+  const { screen, setScreen, setAllWords, setQuizMode, currentStreak, sessionScore, sessionTotal } = useVocabStore()
   const [pressedA, setPressedA] = useState(false)
   const [pressedB, setPressedB] = useState(false)
   const [pressedDir, setPressedDir] = useState<Direction | null>(null)
@@ -86,13 +87,19 @@ export function RetroHandheld() {
           {/* ── LCD Screen ── */}
           <div className="mb-8" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
             <LCDScreen>
-              {screen === 'boot' && <BootScreen onComplete={handleBootComplete} />}
-              {screen === 'menu' && <MenuScreen onNavigate={navigateTo} />}
-              {screen === 'quiz' && <QuizScreen onBack={goMenu} />}
-              {screen === 'flashcard' && <FlashcardScreen onBack={goMenu} />}
+              {screen === 'boot'     && <BootScreen onComplete={handleBootComplete} />}
+              {screen === 'menu'     && <MenuScreen onNavigate={navigateTo} />}
+              {screen === 'quizmode' && (
+                <QuizModeScreen
+                  onSelect={(mode: QuizMode) => { setQuizMode(mode); setScreen('quiz') }}
+                  onBack={goMenu}
+                />
+              )}
+              {screen === 'quiz'     && <QuizScreen onBack={() => setScreen('quizmode')} />}
+              {screen === 'flashcard'&& <FlashcardScreen onBack={goMenu} />}
               {screen === 'wordlist' && <WordListScreen onBack={goMenu} />}
-              {screen === 'stats' && <StatsScreen onBack={goMenu} />}
-              {screen === 'addword' && <AddWordScreen onBack={goMenu} />}
+              {screen === 'stats'    && <StatsScreen onBack={goMenu} />}
+              {screen === 'addword'  && <AddWordScreen onBack={goMenu} />}
             </LCDScreen>
           </div>
 
