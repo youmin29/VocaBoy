@@ -16,8 +16,25 @@ export async function ensureSeeded() {
   }
 }
 
-// In browser mode (no electron), use in-memory fallback
-const memVocab: VocabRow[] = JLPT_N4_VOCAB.map((v, i) => ({
+// ── 브라우저 모드용 로컬스토리지 커스텀 단어 ─────────────────────────────────
+const STORAGE_KEY = 'vocaboy_custom'
+
+function loadCustomFromStorage(): VocabRow[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveCustomToStorage(words: VocabRow[]) {
+  try {
+    const custom = words.filter(w => w.is_custom === 1)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(custom))
+  } catch {}
+}
+
+// In browser mode (no electron), use in-memory fallback with localStorage persistence
+const n4Words: VocabRow[] = JLPT_N4_VOCAB.map((v, i) => ({
   id: i + 1,
   word: v.word,
   reading: v.reading,
@@ -31,6 +48,11 @@ const memVocab: VocabRow[] = JLPT_N4_VOCAB.map((v, i) => ({
   streak: 0,
   mastered: 0,
 }))
+
+const memVocab: VocabRow[] = [
+  ...n4Words,
+  ...loadCustomFromStorage(),
+]
 
 const memProgress: Record<number, { correct: number; wrong: number; streak: number; mastered: number }> = {}
 
@@ -82,7 +104,9 @@ export const db = {
       await window.vocaAPI.vocab.addCustom(word, reading, meaning, example)
       return
     }
+    // 브라우저 모드: 메모리 + 로컬스토리지에 저장
     const id = memVocab.length + 1
-    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category: 'custom', is_custom: 1 })
+    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category: 'custom', is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0 })
+    saveCustomToStorage(memVocab)
   },
 }

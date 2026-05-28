@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useVocabStore, Screen, QuizMode } from '../store/vocabStore'
-import { db } from '../utils/db'
+import { db, ensureSeeded } from '../utils/db'
 import { sounds } from '../utils/audio'
 
 import { LCDScreen } from './LCDScreen'
@@ -23,9 +23,9 @@ export function RetroHandheld() {
 
   // load all words on boot complete
   const handleBootComplete = async () => {
+    await ensureSeeded()
     const words = await db.getAll()
-    // seed if empty (in-memory fallback already populated)
-    setAllWords(words.length > 0 ? words : await db.getAll())
+    setAllWords(words)
     setScreen('menu')
   }
 
