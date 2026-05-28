@@ -5,8 +5,8 @@ contextBridge.exposeInMainWorld('vocaAPI', {
     getAll: () => ipcRenderer.invoke('vocab:getAll'),
     getByCategory: (category: string) => ipcRenderer.invoke('vocab:getByCategory', category),
     getRandom: (count: number, excludeIds: number[]) => ipcRenderer.invoke('vocab:getRandom', count, excludeIds),
-    addCustom: (word: string, reading: string, meaning: string, example: string) =>
-      ipcRenderer.invoke('vocab:addCustom', word, reading, meaning, example),
+    addCustom: (word: string, reading: string, meaning: string, example: string, category: string) =>
+      ipcRenderer.invoke('vocab:addCustom', word, reading, meaning, example, category),
     delete: (id: number) => ipcRenderer.invoke('vocab:delete', id),
   },
   progress: {

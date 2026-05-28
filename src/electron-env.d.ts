@@ -3,7 +3,7 @@ interface VocaAPI {
     getAll: () => Promise<VocabRow[]>
     getByCategory: (category: string) => Promise<VocabRow[]>
     getRandom: (count: number, excludeIds: number[]) => Promise<VocabRow[]>
-    addCustom: (word: string, reading: string, meaning: string, example: string) => Promise<number>
+    addCustom: (word: string, reading: string, meaning: string, example: string, category: string) => Promise<number>
     delete: (id: number) => Promise<void>
   }
   progress: {

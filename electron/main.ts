@@ -158,10 +158,10 @@ ipcMain.handle('vocab:getRandom', (_e: unknown, count: number, excludeIds: numbe
   `).all(count)
 })
 
-ipcMain.handle('vocab:addCustom', (_e: unknown, word: string, reading: string, meaning: string, example: string) => {
+ipcMain.handle('vocab:addCustom', (_e: unknown, word: string, reading: string, meaning: string, example: string, category = 'custom') => {
   const result = db.prepare(
-    `INSERT INTO vocab (word, reading, meaning, example, level, category, is_custom) VALUES (?, ?, ?, ?, 'N4', 'custom', 1)`
-  ).run(word, reading, meaning, example)
+    `INSERT INTO vocab (word, reading, meaning, example, level, category, is_custom) VALUES (?, ?, ?, ?, 'N4', ?, 1)`
+  ).run(word, reading, meaning, example, category)
   return result.lastInsertRowid
 })
 

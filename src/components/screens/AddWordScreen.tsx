@@ -11,11 +11,15 @@ interface Props {
 type Tab = 'manual' | 'import'
 type ImportState = 'idle' | 'preview' | 'saving' | 'done'
 
+const CATEGORIES = ['동사', '명사', '형용사', 'な형용사', '부사', 'custom'] as const
+type Category = typeof CATEGORIES[number]
+
 interface ParsedWord {
   word: string
   reading: string
   meaning: string
   example: string
+  category: string
 }
 
 export function AddWordScreen({ onBack }: Props) {
@@ -23,11 +27,12 @@ export function AddWordScreen({ onBack }: Props) {
   const [tab, setTab] = useState<Tab>('manual')
 
   // ── 직접 입력 ──────────────────────────────────────────────────
-  const [word, setWord]       = useState('')
-  const [reading, setReading] = useState('')
-  const [meaning, setMeaning] = useState('')
-  const [example, setExample] = useState('')
-  const [saved, setSaved]     = useState(false)
+  const [word, setWord]         = useState('')
+  const [reading, setReading]   = useState('')
+  const [meaning, setMeaning]   = useState('')
+  const [example, setExample]   = useState('')
+  const [category, setCategory] = useState<Category>('custom')
+  const [saved, setSaved]       = useState(false)
 
   // ── 엑셀 가져오기 ───────────────────────────────────────────────
   const fileRef                         = useRef<HTMLInputElement>(null)
@@ -46,11 +51,11 @@ export function AddWordScreen({ onBack }: Props) {
   const handleSave = async () => {
     if (!word.trim() || !reading.trim() || !meaning.trim()) return
     sounds.correct()
-    await db.addWord(word.trim(), reading.trim(), meaning.trim(), example.trim())
+    await db.addWord(word.trim(), reading.trim(), meaning.trim(), example.trim(), category)
     const updated = await db.getAll()
     setAllWords(updated)
     setSaved(true)
-    setWord(''); setReading(''); setMeaning(''); setExample('')
+    setWord(''); setReading(''); setMeaning(''); setExample(''); setCategory('custom')
     setTimeout(() => setSaved(false), 1500)
   }
 
@@ -69,15 +74,20 @@ export function AddWordScreen({ onBack }: Props) {
         const rows = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1 }) as string[][]
 
         // 1행 헤더 스킵, 빈 행 제거
+        const validCategories: string[] = [...CATEGORIES]
         const words: ParsedWord[] = rows
           .slice(1)
           .filter(r => r[0] && r[1] && r[2])
-          .map(r => ({
-            word:    String(r[0]).trim(),
-            reading: String(r[1]).trim(),
-            meaning: String(r[2]).trim(),
-            example: r[3] ? String(r[3]).trim() : '',
-          }))
+          .map(r => {
+            const rawCat = r[4] ? String(r[4]).trim() : ''
+            return {
+              word:     String(r[0]).trim(),
+              reading:  String(r[1]).trim(),
+              meaning:  String(r[2]).trim(),
+              example:  r[3] ? String(r[3]).trim() : '',
+              category: validCategories.includes(rawCat) ? rawCat : 'custom',
+            }
+          })
 
         if (words.length === 0) {
           setErrorMsg('유효한 단어가 없어요. 형식을 확인해 주세요.')
@@ -100,7 +110,7 @@ export function AddWordScreen({ onBack }: Props) {
   const handleImport = async () => {
     setImportState('saving')
     for (const w of parsed) {
-      await db.addWord(w.word, w.reading, w.meaning, w.example)
+      await db.addWord(w.word, w.reading, w.meaning, w.example, w.category)
     }
     const updated = await db.getAll()
     setAllWords(updated)
@@ -141,6 +151,20 @@ export function AddWordScreen({ onBack }: Props) {
           <Field label="READING (읽기)" value={reading} onChange={setReading} placeholder="e.g. べんきょう" />
           <Field label="MEANING (뜻)"   value={meaning} onChange={setMeaning} placeholder="e.g. 공부" />
           <Field label="EXAMPLE (예문)" value={example} onChange={setExample} placeholder="e.g. 毎日勉強する" />
+          <div>
+            <div className="text-[9px] opacity-60 mb-0.5 tracking-wider">CATEGORY</div>
+            <div className="flex flex-wrap gap-1">
+              {CATEGORIES.map(c => (
+                <button
+                  key={c}
+                  onClick={() => setCategory(c)}
+                  className={`px-1.5 py-0.5 text-[9px] border transition-colors ${category === c ? 'bg-lcd-dark text-lcd-bg border-lcd-dark' : 'border-lcd-dark/30 hover:bg-lcd-dark/10'}`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
           {saved && <div className="text-center text-sm animate-pixelIn">◆ SAVED! ◆</div>}
           <button
             onClick={handleSave}
@@ -166,7 +190,9 @@ export function AddWordScreen({ onBack }: Props) {
                 <div>B열: 읽기 (히라가나)  ← 필수</div>
                 <div>C열: 뜻 (한국어)  ← 필수</div>
                 <div>D열: 예문  ← 선택</div>
-                <div className="mt-1 opacity-70">※ 1행은 헤더로 자동 스킵</div>
+                <div>E열: 품사  ← 선택</div>
+                <div className="mt-1 opacity-60">품사: 동사·명사·형용사·な형용사·부사·custom</div>
+                <div className="mt-0.5 opacity-70">※ 1행은 헤더로 자동 스킵</div>
               </div>
 
               {errorMsg && (
@@ -204,6 +230,8 @@ export function AddWordScreen({ onBack }: Props) {
                     <span className="opacity-70">{w.reading}</span>
                     <span className="opacity-60 mx-1">·</span>
                     <span>{w.meaning}</span>
+                    <span className="opacity-50 mx-1">·</span>
+                    <span className="opacity-60">{w.category}</span>
                   </div>
                 ))}
                 {parsed.length > 3 && (

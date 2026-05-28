@@ -12,7 +12,7 @@ export async function ensureSeeded() {
   if (all.length > 0) return
 
   for (const v of JLPT_N4_VOCAB) {
-    await window.vocaAPI.vocab.addCustom(v.word, v.reading, v.meaning, v.example)
+    await window.vocaAPI.vocab.addCustom(v.word, v.reading, v.meaning, v.example, v.category)
   }
 }
 
@@ -99,14 +99,14 @@ export const db = {
     memVocab.forEach(v => { v.correct = 0; v.wrong = 0; v.streak = 0; v.mastered = 0 })
     Object.keys(memProgress).forEach(k => delete memProgress[Number(k)])
   },
-  async addWord(word: string, reading: string, meaning: string, example: string): Promise<void> {
+  async addWord(word: string, reading: string, meaning: string, example: string, category = 'custom'): Promise<void> {
     if (window.vocaAPI) {
-      await window.vocaAPI.vocab.addCustom(word, reading, meaning, example)
+      await window.vocaAPI.vocab.addCustom(word, reading, meaning, example, category)
       return
     }
     // 브라우저 모드: 메모리 + 로컬스토리지에 저장
     const id = memVocab.length + 1
-    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category: 'custom', is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0 })
+    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category, is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0 })
     saveCustomToStorage(memVocab)
   },
 }
