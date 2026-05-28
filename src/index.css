@@ -7,8 +7,7 @@
 @layer base {
   * {
     box-sizing: border-box;
-    -webkit-font-smoothing: none;
-    font-smooth: never;
+    -webkit-font-smoothing: antialiased;
   }
 
   html, body, #root {
