@@ -12,7 +12,7 @@ export async function ensureSeeded() {
   if (all.length > 0) return
 
   for (const v of JLPT_N4_VOCAB) {
-    await window.vocaAPI.vocab.addCustom(v.word, v.reading, v.meaning, v.example, v.category as unknown as string)
+    await window.vocaAPI.vocab.addCustom(v.word, v.reading, v.meaning, v.example)
   }
 }
 

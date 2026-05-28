@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useVocabStore, Screen, QuizMode } from '../store/vocabStore'
 import { db } from '../utils/db'
 import { sounds } from '../utils/audio'
@@ -77,10 +77,12 @@ export function RetroHandheld() {
             {/* battery */}
             <div className="flex items-center gap-1 opacity-70">
               <span className="text-[8px] font-mono text-[#6a6a8a] tracking-wider">BATT</span>
-              <div className="w-6 h-3 border border-[#6a6a8a] rounded-[2px] flex items-center px-0.5 gap-0.5">
-                <div className="flex-1 h-1.5 bg-emerald-600 rounded-[1px]" />
+              <div className="flex items-center">
+                <div className="w-6 h-3 border border-[#6a6a8a] rounded-l-[2px] flex items-center px-0.5">
+                  <div className="flex-1 h-1.5 bg-emerald-600 rounded-[1px]" />
+                </div>
+                <div className="w-0.5 h-2 bg-[#6a6a8a] rounded-r" />
               </div>
-              <div className="w-0.5 h-2 bg-[#6a6a8a] rounded-r" />
             </div>
           </div>
 
