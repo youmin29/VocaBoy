@@ -112,7 +112,7 @@ function createWindow() {
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#1a1a2e',
     webPreferences: {
-      preload: path.join(MAIN_DIST, 'preload.js'),
+      preload: path.join(MAIN_DIST, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -160,7 +160,7 @@ ipcMain.handle('vocab:getRandom', (_e: unknown, count: number, excludeIds: numbe
 
 ipcMain.handle('vocab:addCustom', (_e: unknown, word: string, reading: string, meaning: string, example: string) => {
   const result = db.prepare(
-    'INSERT INTO vocab (word, reading, meaning, example, level, category, is_custom) VALUES (?, ?, ?, ?, "N4", "custom", 1)'
+    `INSERT INTO vocab (word, reading, meaning, example, level, category, is_custom) VALUES (?, ?, ?, ?, 'N4', 'custom', 1)`
   ).run(word, reading, meaning, example)
   return result.lastInsertRowid
 })
