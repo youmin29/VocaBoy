@@ -32,7 +32,7 @@ export function LCDScreen({ children }: Props) {
             {/* glare */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/15 pointer-events-none rounded-md" />
             {/* content */}
-            <div className="relative h-full p-4">
+            <div className="relative h-full p-4 overflow-y-auto lcd-scroll">
               {children}
             </div>
           </div>

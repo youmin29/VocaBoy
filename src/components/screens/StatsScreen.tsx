@@ -30,7 +30,7 @@ export function StatsScreen({ onBack }: Props) {
   const masteredPct = stats.totalWords > 0 ? Math.round((stats.masteredWords / stats.totalWords) * 100) : 0
 
   return (
-    <div className="h-full flex flex-col font-dot text-lcd-dark select-none">
+    <div className="min-h-full flex flex-col font-dot text-lcd-dark select-none">
       <div className="text-center border-b-2 border-lcd-dark/30 pb-2 mb-3">
         <div className="text-xl tracking-widest">◆ MY STATS ◆</div>
       </div>

@@ -35,7 +35,7 @@ export function AddWordScreen({ onBack }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col font-dot text-lcd-dark select-none">
+    <div className="min-h-full flex flex-col font-dot text-lcd-dark select-none">
       <div className="text-center border-b-2 border-lcd-dark/30 pb-2 mb-3">
         <div className="text-xl tracking-widest">◆ ADD WORD ◆</div>
       </div>

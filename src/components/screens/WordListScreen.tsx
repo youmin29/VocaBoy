@@ -66,7 +66,7 @@ export function WordListScreen({ onBack }: Props) {
       </div>
 
       {/* list */}
-      <div className="flex-1 space-y-0.5 overflow-hidden">
+      <div className="flex-1 space-y-0.5 overflow-y-auto min-h-0 lcd-scroll">
         {pageItems.map((w, i) => (
           <div
             key={w.id}
