@@ -47,6 +47,7 @@ const memVocab: VocabRow[] = loadWordsFromStorage() ?? JLPT_N4_VOCAB.map((v, i) 
   wrong: 0,
   streak: 0,
   mastered: 0,
+  starred: 0,
 }))
 
 // memProgress를 저장된 memVocab에서 초기화 (진도 누락 방지)
@@ -113,7 +114,29 @@ export const db = {
       return
     }
     const id = memVocab.length + 1
-    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category, is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0 })
+    memVocab.push({ id, word, reading, meaning, example, level: 'N4', category, is_custom: 1, correct: 0, wrong: 0, streak: 0, mastered: 0, starred: 0 })
     saveWordsToStorage(memVocab)
+  },
+  async toggleStar(id: number): Promise<void> {
+    if (window.vocaAPI) {
+      await window.vocaAPI.vocab.toggleStar(id)
+      return
+    }
+    const v = memVocab.find(x => x.id === id)
+    if (v) {
+      v.starred = v.starred ? 0 : 1
+      saveWordsToStorage(memVocab)
+    }
+  },
+  async deleteWord(id: number): Promise<void> {
+    if (window.vocaAPI) {
+      await window.vocaAPI.vocab.delete(id)
+      return
+    }
+    const idx = memVocab.findIndex(v => v.id === id && v.is_custom === 1)
+    if (idx !== -1) {
+      memVocab.splice(idx, 1)
+      saveWordsToStorage(memVocab)
+    }
   },
 }

@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function FlashcardScreen({ onBack }: Props) {
-  const { allWords } = useVocabStore()
+  const { allWords, starFilterActive } = useVocabStore()
   const [deck, setDeck] = useState<VocabRow[]>([])
   const [cursor, setCursor] = useState(0)
   const [flipped, setFlipped] = useState(false)
@@ -16,16 +16,18 @@ export function FlashcardScreen({ onBack }: Props) {
   const [knownCount, setKnownCount] = useState(0)
   const [done, setDone] = useState(false)
 
+  const pool = starFilterActive ? allWords.filter(w => w.starred) : allWords
+
   useEffect(() => {
-    if (allWords.length === 0) return
-    const shuffled = [...allWords].sort(() => Math.random() - 0.5)
+    if (pool.length === 0) return
+    const shuffled = [...pool].sort(() => Math.random() - 0.5)
     setDeck(shuffled)
     setCursor(0)
     setFlipped(false)
     setRated(false)
     setKnownCount(0)
     setDone(false)
-  }, [allWords])
+  }, [allWords, starFilterActive])
 
   const current = deck[cursor]
 
@@ -66,6 +68,14 @@ export function FlashcardScreen({ onBack }: Props) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [flip, rate, flipped, done, onBack])
+
+  if (pool.length === 0) return (
+    <div className="h-full flex flex-col items-center justify-center font-dot text-lcd-dark gap-3 text-center px-4">
+      <div className="text-2xl">★</div>
+      <div className="text-sm tracking-wide">즐겨찾기 단어가 없어요</div>
+      <div className="text-[10px] opacity-50">단어 목록에서 ★를 눌러<br/>즐겨찾기를 추가해주세요</div>
+    </div>
+  )
 
   if (deck.length === 0) return (
     <div className="h-full flex items-center justify-center font-dot text-lcd-dark text-lg">LOADING...</div>

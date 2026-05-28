@@ -12,6 +12,7 @@ interface VocabState {
   sessionTotal: number
   allWords: VocabRow[]
   isLoading: boolean
+  starFilterActive: boolean
 
   setScreen: (s: Screen) => void
   setQuizMode: (m: QuizMode) => void
@@ -22,6 +23,9 @@ interface VocabState {
   recordWrong: () => void
   resetSession: () => void
   setLoading: (v: boolean) => void
+  toggleStarFilter: () => void
+  updateWordStar: (id: number, starred: number) => void
+  deleteWord: (id: number) => void
 }
 
 export const useVocabStore = create<VocabState>((set, get) => ({
@@ -33,11 +37,22 @@ export const useVocabStore = create<VocabState>((set, get) => ({
   sessionTotal: 0,
   allWords: [],
   isLoading: false,
+  starFilterActive: false,
 
   setScreen: (screen) => set({ screen }),
   setQuizMode: (quizMode) => set({ quizMode }),
   setAllWords: (allWords) => set({ allWords }),
   setLoading: (isLoading) => set({ isLoading }),
+
+  toggleStarFilter: () => set(s => ({ starFilterActive: !s.starFilterActive })),
+
+  updateWordStar: (id, starred) => set(s => ({
+    allWords: s.allWords.map(w => w.id === id ? { ...w, starred } : w),
+  })),
+
+  deleteWord: (id) => set(s => ({
+    allWords: s.allWords.filter(w => w.id !== id),
+  })),
 
   incrementStreak: () => set(s => ({
     currentStreak: s.currentStreak + 1,

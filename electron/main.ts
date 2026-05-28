@@ -91,6 +91,10 @@ function initDatabase() {
       UNIQUE(vocab_id)
     );
 
+    CREATE TABLE IF NOT EXISTS starred_words (
+      vocab_id INTEGER PRIMARY KEY REFERENCES vocab(id)
+    );
+
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       mode TEXT NOT NULL,
@@ -129,18 +133,22 @@ function createWindow() {
 
 ipcMain.handle('vocab:getAll', () => {
   return db.prepare(`
-    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered
+    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered,
+           CASE WHEN s.vocab_id IS NOT NULL THEN 1 ELSE 0 END as starred
     FROM vocab v
     LEFT JOIN progress p ON v.id = p.vocab_id
+    LEFT JOIN starred_words s ON v.id = s.vocab_id
     ORDER BY v.id ASC
   `).all()
 })
 
 ipcMain.handle('vocab:getByCategory', (_e: unknown, category: string) => {
   return db.prepare(`
-    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered
+    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered,
+           CASE WHEN s.vocab_id IS NOT NULL THEN 1 ELSE 0 END as starred
     FROM vocab v
     LEFT JOIN progress p ON v.id = p.vocab_id
+    LEFT JOIN starred_words s ON v.id = s.vocab_id
     WHERE v.category = ?
     ORDER BY v.id ASC
   `).all(category)
@@ -149,13 +157,24 @@ ipcMain.handle('vocab:getByCategory', (_e: unknown, category: string) => {
 ipcMain.handle('vocab:getRandom', (_e: unknown, count: number, excludeIds: number[]) => {
   const placeholders = excludeIds.length > 0 ? `AND v.id NOT IN (${excludeIds.join(',')})` : ''
   return db.prepare(`
-    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered
+    SELECT v.*, p.correct, p.wrong, p.streak, p.last_seen, p.mastered,
+           CASE WHEN s.vocab_id IS NOT NULL THEN 1 ELSE 0 END as starred
     FROM vocab v
     LEFT JOIN progress p ON v.id = p.vocab_id
+    LEFT JOIN starred_words s ON v.id = s.vocab_id
     WHERE 1=1 ${placeholders}
     ORDER BY RANDOM()
     LIMIT ?
   `).all(count)
+})
+
+ipcMain.handle('vocab:toggleStar', (_e: unknown, id: number) => {
+  const exists = db.prepare('SELECT 1 FROM starred_words WHERE vocab_id = ?').get(id)
+  if (exists) {
+    db.prepare('DELETE FROM starred_words WHERE vocab_id = ?').run(id)
+  } else {
+    db.prepare('INSERT INTO starred_words (vocab_id) VALUES (?)').run(id)
+  }
 })
 
 ipcMain.handle('vocab:addCustom', (_e: unknown, word: string, reading: string, meaning: string, example: string, category = 'custom') => {

@@ -5,6 +5,7 @@ interface VocaAPI {
     getRandom: (count: number, excludeIds: number[]) => Promise<VocabRow[]>
     addCustom: (word: string, reading: string, meaning: string, example: string, category: string) => Promise<number>
     delete: (id: number) => Promise<void>
+    toggleStar: (id: number) => Promise<void>
   }
   progress: {
     record: (vocabId: number, correct: boolean) => Promise<void>
@@ -30,6 +31,7 @@ interface VocabRow {
   streak?: number
   last_seen?: string
   mastered?: number
+  starred?: number
 }
 
 interface StatsData {

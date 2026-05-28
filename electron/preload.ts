@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('vocaAPI', {
     addCustom: (word: string, reading: string, meaning: string, example: string, category: string) =>
       ipcRenderer.invoke('vocab:addCustom', word, reading, meaning, example, category),
     delete: (id: number) => ipcRenderer.invoke('vocab:delete', id),
+    toggleStar: (id: number) => ipcRenderer.invoke('vocab:toggleStar', id),
   },
   progress: {
     record: (vocabId: number, correct: boolean) => ipcRenderer.invoke('progress:record', vocabId, correct),

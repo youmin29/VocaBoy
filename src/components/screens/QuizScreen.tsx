@@ -54,20 +54,22 @@ interface Props {
 const QUIZ_LENGTH = 10
 
 export function QuizScreen({ onBack }: Props) {
-  const { allWords, quizMode, recordCorrect, recordWrong, sessionScore, sessionTotal, currentStreak, bestStreak, resetSession } = useVocabStore()
+  const { allWords, quizMode, starFilterActive, recordCorrect, recordWrong, sessionScore, sessionTotal, currentStreak, bestStreak, resetSession } = useVocabStore()
   const [items, setItems] = useState<QuizItem[]>([])
   const [cursor, setCursor] = useState(0)
   const [selected, setSelected] = useState<0 | 1 | null>(null)
   const [phase, setPhase] = useState<Phase>('question')
   const [shake, setShake] = useState(false)
 
+  const pool = starFilterActive ? allWords.filter(w => w.starred) : allWords
+
   useEffect(() => {
-    if (allWords.length < 4) return
+    if (pool.length < 4) return
     resetSession()
-    const shuffled = [...allWords].sort(() => Math.random() - 0.5).slice(0, QUIZ_LENGTH)
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, QUIZ_LENGTH)
     setItems(shuffled.map(v => buildItem(v, allWords, quizMode)))
     setCursor(0); setSelected(null); setPhase('question')
-  }, [allWords, quizMode])
+  }, [allWords, quizMode, starFilterActive])
 
   const current = items[cursor]
 
@@ -107,6 +109,14 @@ export function QuizScreen({ onBack }: Props) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [phase, confirm, next, onBack])
+
+  if (pool.length < 4) return (
+    <div className="h-full flex flex-col items-center justify-center font-dot text-lcd-dark gap-3 text-center px-4">
+      <div className="text-2xl">★</div>
+      <div className="text-sm tracking-wide">즐겨찾기 단어가<br/>4개 이상 필요해요</div>
+      <div className="text-[10px] opacity-50">단어 목록에서 ★를 눌러<br/>즐겨찾기를 추가해주세요</div>
+    </div>
+  )
 
   if (items.length === 0) return (
     <div className="h-full flex items-center justify-center font-dot text-lcd-dark text-lg">LOADING...</div>
