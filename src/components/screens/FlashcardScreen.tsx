@@ -120,8 +120,14 @@ export function FlashcardScreen({ onBack }: Props) {
           /* front - 일본어 */
           <div className="w-full text-center space-y-2 animate-pixelIn">
             <div className="text-[10px] opacity-50 tracking-wider mb-3">◇ JAPANESE ◇</div>
-            <div className="text-4xl font-bold tracking-tight">{current.word}</div>
-            <div className="text-lg opacity-70">{current.reading}</div>
+            {current.word.trim() !== '' ? (
+              <>
+                <div className="text-4xl font-bold tracking-tight">{current.word}</div>
+                <div className="text-lg opacity-70">{current.reading}</div>
+              </>
+            ) : (
+              <div className="text-4xl font-bold tracking-tight">{current.reading}</div>
+            )}
             <div className="text-[10px] opacity-40 mt-4 border border-lcd-dark/20 inline-block px-2 py-0.5">
               {current.category}
             </div>

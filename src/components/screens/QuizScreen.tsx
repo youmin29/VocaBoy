@@ -16,16 +16,20 @@ interface QuizItem {
 }
 
 function buildItem(vocab: VocabRow, pool: VocabRow[], type: QuizMode): QuizItem {
-  const resolvedType = type === 'random'
+  const hasKanji = vocab.word.trim() !== ''
+
+  // 한자 없는 단어는 random이어도 의미 퀴즈만 가능
+  let resolvedType = type === 'random'
     ? (['meaning', 'reading', 'writing'] as const)[Math.floor(Math.random() * 3)]
     : type
+  if (!hasKanji && resolvedType !== 'meaning') resolvedType = 'meaning'
 
-  const wrong = pool.filter(v => v.id !== vocab.id)
-  const pick = wrong[Math.floor(Math.random() * wrong.length)]
+  const others = pool.filter(v => v.id !== vocab.id)
   const ci: 0 | 1 = Math.random() < 0.5 ? 0 : 1
 
   if (resolvedType === 'reading') {
     // 한자 → 히라가나
+    const pick = others[Math.floor(Math.random() * others.length)]
     const opts: [string, string] = ci === 0
       ? [vocab.reading, pick.reading]
       : [pick.reading, vocab.reading]
@@ -33,18 +37,23 @@ function buildItem(vocab: VocabRow, pool: VocabRow[], type: QuizMode): QuizItem 
   }
 
   if (resolvedType === 'writing') {
-    // 히라가나 → 한자
+    // 히라가나 → 한자 (보기도 한자 있는 단어에서만)
+    const kanjiOthers = others.filter(v => v.word.trim() !== '')
+    const pick = kanjiOthers[Math.floor(Math.random() * kanjiOthers.length)]
     const opts: [string, string] = ci === 0
       ? [vocab.word, pick.word]
       : [pick.word, vocab.word]
     return { vocab, questionLabel: 'WRITING', questionText: vocab.reading, questionSub: vocab.meaning, options: opts, correctIndex: ci, type: resolvedType }
   }
 
-  // meaning: 한자 → 뜻
+  // meaning: 한자 있으면 한자 표시, 없으면 히라가나 표시 → 한국어 뜻 맞추기
+  const pick = others[Math.floor(Math.random() * others.length)]
+  const questionText = hasKanji ? vocab.word : vocab.reading
+  const questionSub  = hasKanji ? vocab.reading : ''
   const opts: [string, string] = ci === 0
     ? [vocab.meaning, pick.meaning]
     : [pick.meaning, vocab.meaning]
-  return { vocab, questionLabel: 'MEANING', questionText: vocab.word, questionSub: vocab.reading, options: opts, correctIndex: ci, type: resolvedType }
+  return { vocab, questionLabel: 'MEANING', questionText, questionSub, options: opts, correctIndex: ci, type: resolvedType }
 }
 
 interface Props {
@@ -63,10 +72,15 @@ export function QuizScreen({ onBack }: Props) {
 
   const pool = starFilterActive ? allWords.filter(w => w.starred) : allWords
 
+  // 읽기·표기 모드는 한자 있는 단어만 출제
+  const quizPool = (quizMode === 'reading' || quizMode === 'writing')
+    ? pool.filter(v => v.word.trim() !== '')
+    : pool
+
   useEffect(() => {
-    if (pool.length < 4) return
+    if (quizPool.length < 4) return
     resetSession()
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, QUIZ_LENGTH)
+    const shuffled = [...quizPool].sort(() => Math.random() - 0.5).slice(0, QUIZ_LENGTH)
     setItems(shuffled.map(v => buildItem(v, allWords, quizMode)))
     setCursor(0); setSelected(null); setPhase('question')
   }, [allWords, quizMode, starFilterActive])
@@ -110,11 +124,20 @@ export function QuizScreen({ onBack }: Props) {
     return () => window.removeEventListener('keydown', handler)
   }, [phase, confirm, next, onBack])
 
-  if (pool.length < 4) return (
+  if (quizPool.length < 4) return (
     <div className="h-full flex flex-col items-center justify-center font-dot text-lcd-dark gap-3 text-center px-4">
-      <div className="text-2xl">★</div>
-      <div className="text-sm tracking-wide">즐겨찾기 단어가<br/>4개 이상 필요해요</div>
-      <div className="text-[10px] opacity-50">단어 목록에서 ★를 눌러<br/>즐겨찾기를 추가해주세요</div>
+      {starFilterActive
+        ? <>
+            <div className="text-2xl">★</div>
+            <div className="text-sm tracking-wide">즐겨찾기 단어가<br/>4개 이상 필요해요</div>
+            <div className="text-[10px] opacity-50">단어 목록에서 ★를 눌러<br/>즐겨찾기를 추가해주세요</div>
+          </>
+        : <>
+            <div className="text-2xl">(･_･)</div>
+            <div className="text-sm tracking-wide">한자가 있는 단어가<br/>4개 이상 필요해요</div>
+            <div className="text-[10px] opacity-50">의미 퀴즈 또는 랜덤 믹스를<br/>이용해 주세요</div>
+          </>
+      }
     </div>
   )
 

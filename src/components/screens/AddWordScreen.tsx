@@ -49,7 +49,7 @@ export function AddWordScreen({ onBack }: Props) {
 
   // 직접 입력 저장
   const handleSave = async () => {
-    if (!word.trim() || !reading.trim() || !meaning.trim()) return
+    if (!reading.trim() || !meaning.trim()) return
     sounds.correct()
     await db.addWord(word.trim(), reading.trim(), meaning.trim(), example.trim(), category)
     const updated = await db.getAll()
@@ -77,11 +77,11 @@ export function AddWordScreen({ onBack }: Props) {
         const validCategories: string[] = [...CATEGORIES]
         const words: ParsedWord[] = rows
           .slice(1)
-          .filter(r => r[0] && r[1] && r[2])
+          .filter(r => r[1] && r[2])
           .map(r => {
             const rawCat = r[4] ? String(r[4]).trim() : ''
             return {
-              word:     String(r[0]).trim(),
+              word:     r[0] ? String(r[0]).trim() : '',
               reading:  String(r[1]).trim(),
               meaning:  String(r[2]).trim(),
               example:  r[3] ? String(r[3]).trim() : '',
@@ -147,7 +147,7 @@ export function AddWordScreen({ onBack }: Props) {
       {/* ── 직접 입력 탭 ── */}
       {tab === 'manual' && (
         <div className="flex-1 space-y-2">
-          <Field label="WORD (일본어)"  value={word}    onChange={setWord}    placeholder="e.g. 勉強" />
+          <Field label="WORD (한자) ← 선택"  value={word}    onChange={setWord}    placeholder="e.g. 勉強" />
           <Field label="READING (읽기)" value={reading} onChange={setReading} placeholder="e.g. べんきょう" />
           <Field label="MEANING (뜻)"   value={meaning} onChange={setMeaning} placeholder="e.g. 공부" />
           <Field label="EXAMPLE (예문)" value={example} onChange={setExample} placeholder="e.g. 毎日勉強する" />
@@ -168,7 +168,7 @@ export function AddWordScreen({ onBack }: Props) {
           {saved && <div className="text-center text-sm animate-pixelIn">◆ SAVED! ◆</div>}
           <button
             onClick={handleSave}
-            disabled={!word || !reading || !meaning}
+            disabled={!reading || !meaning}
             className="w-full py-2 border-2 border-lcd-dark text-sm tracking-wider hover:bg-lcd-dark hover:text-lcd-bg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             SAVE WORD
@@ -186,7 +186,7 @@ export function AddWordScreen({ onBack }: Props) {
               {/* 형식 안내 */}
               <div className="bg-lcd-dark/8 border border-lcd-dark/20 p-2 text-[9px] leading-relaxed opacity-75">
                 <div className="font-bold mb-1 tracking-wider">엑셀 형식 안내</div>
-                <div>A열: 단어 (한자)  ← 필수</div>
+                <div>A열: 단어 (한자)  ← 선택</div>
                 <div>B열: 읽기 (히라가나)  ← 필수</div>
                 <div>C열: 뜻 (한국어)  ← 필수</div>
                 <div>D열: 예문  ← 선택</div>

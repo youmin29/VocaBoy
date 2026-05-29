@@ -193,8 +193,12 @@ export function WordListScreen({ onBack }: Props) {
               className={`px-2 py-1 flex items-center gap-1.5 text-xs transition-colors cursor-pointer
                 ${selected === i ? 'bg-lcd-dark text-lcd-bg' : 'hover:bg-lcd-dark/10'}`}
             >
-              <span className="text-base font-bold w-12 shrink-0 truncate">{w.word}</span>
-              <span className="opacity-60 text-[10px] w-16 shrink-0 truncate">{w.reading}</span>
+              <span className="text-base font-bold w-12 shrink-0 truncate">
+                {w.word.trim() !== '' ? w.word : w.reading}
+              </span>
+              {w.word.trim() !== '' && (
+                <span className="opacity-60 text-[10px] w-16 shrink-0 truncate">{w.reading}</span>
+              )}
               <span className="truncate flex-1 text-[10px]">{w.meaning}</span>
               <div className="flex items-center gap-1 shrink-0">
                 <span className={`text-sm ${w.starred ? 'opacity-100' : 'opacity-20'}`}>
